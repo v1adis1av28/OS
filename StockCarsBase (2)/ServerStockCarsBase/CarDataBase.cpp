@@ -43,17 +43,52 @@ bool CarDataBase::start() {
     qDebug() << "Database successfully load.\n";
 
     const DWORD
-        FINISH_REQ  = 0,
-        APPEND_REQ  = 1;
-
+            FINISH_REQ  = 0,
+            APPEND_REQ  = 1,
+            RECORDS_REQ = 3,
+            RECORD_ID_REQ =4,
+            RECORD_INDEX_REQ =5,
+            COUNT_REQ=6,
+            UPDATE_REQ=7,
+            REMOVE_REQ=8,
+            SAVE_REQ=9,
+            LOAD_REQ=10,
+            SAVE_DB =11;
 
     Cars rec;
 
     do
     {
         ReadFile(hPipe, (LPVOID)&req, sizeof(int), &bytesRead, NULL);
-        if(req == 1)
-            append();
+        switch (req) {
+            case APPEND_REQ:
+                append();
+                break;
+            case RECORDS_REQ:
+                Records();
+                break;
+            case RECORD_ID_REQ:
+                record_id();
+                break;
+            case RECORD_INDEX_REQ:
+                record_index();
+                break;
+            case UPDATE_REQ:
+                update();
+                break;
+            case COUNT_REQ:
+                count();
+                break;
+            case REMOVE_REQ:
+                remove();
+                break;
+          //  case SAVE_REQ:
+               // sl_SaveDataBase();
+               // break;
+            case SAVE_DB:
+               sl_SaveDataBase();
+                break;
+        }
     }while(req!=FINISH_REQ);
     //qDebug() << "Disconnect successful.\n";
 
@@ -62,7 +97,7 @@ bool CarDataBase::start() {
 
 void CarDataBase::SortRecords()
     {
-        for(int i = 0;i<count();++i)
+       /* for(int i = 0;i<count();++i)
         {
             for(int j = 0;j<count()-1;++j)
             {
@@ -72,54 +107,100 @@ void CarDataBase::SortRecords()
                     records[j+1] = tmp;
                 }
             }
-        }
+        }*/
     }
 
 
     //Возвращает кол-во записей
-    int CarDataBase::count() const
+    int CarDataBase::count()
     {
-        return records.size();
+        int size = records.size();
+        WriteFile(hPipe,(LPVOID)&size,sizeof(int),&bytesWritten,NULL);
+        return size;
     }
 
+    int CarDataBase::getNextId()
+    {
+        int max_id=0;
+        for(Cars tmp : records)
+        {
+            if(tmp.id > max_id)
+            {
+                max_id = tmp.id;
+            }
+        }
+        return ++max_id;
+    }
     void CarDataBase::append()
     {
             Cars::CarData d;
             // Запись данных в канал
-            ReadFile(hPipe, &d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
-            ReadFile(hPipe, &d.Truck, sizeof(d.Truck), &bytesRead, NULL);
-            ReadFile(hPipe, &d.Bus, sizeof(d.Bus), &bytesRead, NULL);
-            ReadFile(hPipe, &d.Trailer, sizeof(d.Trailer), &bytesRead, NULL);
-            ReadFile(hPipe, &d.volume, sizeof(d.volume), &bytesRead, NULL);
-            ReadFile(hPipe, &d.Capacity, sizeof(d.Capacity), &bytesRead, NULL);
-            ReadFile(hPipe, &d.price, sizeof(d.price), &bytesRead, NULL);
-            ReadFile(hPipe, &d.Model, sizeof(d.Model), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.Truck, sizeof(d.Truck), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.Bus, sizeof(d.Bus), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.Trailer, sizeof(d.Trailer), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.volume, sizeof(d.volume), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.Capacity, sizeof(d.Capacity), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.price, sizeof(d.price), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.Model, sizeof(d.Model), &bytesRead, NULL);
+            ReadFile(hPipe, (LPVOID)&d.quantity, sizeof(d.quantity), &bytesRead, NULL);
 
-            Cars record = Cars::fromCarData(d);
-        record.id = GetNewNext();
+        Cars record = Cars::fromCarData(d);
+        record.id = getNextId();
         ++size_;
-        nextId++;
-        WriteFile(hPipe,(LPCVOID)&record.id,sizeof(unsigned int),&bytesWritten,NULL);
+
+        WriteFile(hPipe,(LPVOID)&record.id,sizeof(unsigned int),&bytesWritten,NULL);
         records.push_back(record);
         is_changed = true;
 
+    }
+    QVector<Cars> CarDataBase::Records()
+    {
+
+        QVector<Cars> res;
+        int size = records.size();
+        WriteFile(hPipe,(LPVOID)&size, sizeof (size),&bytesWritten,NULL);
+         for(int i = 0; i < size; i++)
+         {
+             Cars::CarData d;
+             // Read the CarData from the channel
+             WriteFile(hPipe, (LPVOID)&d.id, sizeof(d.id), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.Truck, sizeof(d.Truck), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.Bus, sizeof(d.Bus), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.Trailer, sizeof(d.Trailer), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.volume, sizeof(d.volume), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.Capacity, sizeof(d.Capacity), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.price, sizeof(d.price), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.Model, sizeof(d.Model), &bytesWritten, NULL);
+             WriteFile(hPipe, (LPVOID)&d.quantity, sizeof(d.quantity), &bytesWritten, NULL);
+             // Convert the CarData to a Cars object and append it to the result vector
+             res.append(Cars::fromCarData(d));
+         }
+
+         return res;
     }
 
     void CarDataBase::append_load(Cars& record)
     {
         ++size_;
-        nextId++;
+        id++;
         records.push_back(record);
         is_changed = true;
     }
 
 
-    void CarDataBase::remove(unsigned int id)
+    void CarDataBase::remove()
     {
-        auto iter = std::remove_if(records.begin(), records.end(), [id](const Cars& car) { return car.id == id; });
-        if (iter != records.end()) {
-            records.erase(iter, records.end());
-            is_changed = true;
+        int id;
+        ReadFile(hPipe,(LPVOID)&id,sizeof (int),&bytesRead,NULL);
+        for(int i = 0;i<records.size();i++)
+        {
+            if(records[i].id == id)
+            {
+                records.erase(records.begin() + i);
+                size_--;
+            }
         }
     }
 
@@ -128,11 +209,11 @@ void CarDataBase::SortRecords()
             qDebug() << "Начало загрузки файла";
 
             // Очищаем базу данных
-            if (this->count() != 0)
+            if (this->records.size() != 0)
                 this->clear();
 
             // Загружаем базу данных из файла
-            QString fileName = "E:/CarTest.records";
+            QString fileName = "G:/CarTest.records";
             qDebug() << "Пытаемся открыть файл" << fileName;
             HANDLE hFile = CreateFile(reinterpret_cast<LPCWSTR>(fileName.utf16()), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (hFile == INVALID_HANDLE_VALUE) {
@@ -143,7 +224,7 @@ void CarDataBase::SortRecords()
             }
 
             DWORD bytesRead;
-            int dbSize = this->count();
+            int dbSize = this->records.size();
             if (!ReadFile(hFile, &dbSize, sizeof(int), &bytesRead, nullptr)) {
                 // Обработка ошибки чтения размера базы данных
                 //QMessageBox::critical(nullptr, "Ошибка", "Не удалось прочитать размер базы данных.");
@@ -247,7 +328,7 @@ void CarDataBase::sl_SaveDataBase()
 
     DWORD bytesWritten;
 
-    int dbSize = this->count();
+    int dbSize = this->records.size();
     if (!WriteFile(hFile, &dbSize, sizeof(int), &bytesWritten, NULL)) {
         // Обработка ошибки записи размера базы данных
         //QMessageBox::critical(nullptr, "Ошибка", "Не удалось записать размер базы данных.");
@@ -256,7 +337,7 @@ void CarDataBase::sl_SaveDataBase()
     }
 
     for (int j = 0; j < dbSize; j++) {
-        Cars note = this->record_index(j);
+        Cars note = this->index_rec(j);
 
         if (!WriteFile(hFile, &note.id, sizeof(int), &bytesWritten, NULL)) {
             // Обработка ошибки записи id записи
@@ -315,28 +396,33 @@ void CarDataBase::sl_SaveDataBase()
 }
 
 
-    int CarDataBase::update(Cars& record)
+    int CarDataBase::update()
     {
-        for(auto iterator = records.begin();iterator != records.end();++iterator)
-        {
-           if((*iterator).id == record.id)
-           {
-              (*iterator).volume =  record.volume;
-               (*iterator).price = record.price;
-               (*iterator).Capacity = record.Capacity;
-               (*iterator).quantity = record.quantity;
-               (*iterator).Model = record.Model;
-               (*iterator).Carrying = record.Carrying;
-               (*iterator).Acceleration = record.Acceleration;
-               (*iterator).MaxSpeed = record.MaxSpeed;
-               (*iterator).Climat  = record.Climat;
-               (*iterator).Bus = record.Bus;
-               (*iterator).Trailer = record.Trailer;
-               (*iterator).Truck = record.Truck;
-               (*iterator).Passenger = record.Passenger;
-           }
-        }
-        SortRecords();
+        Cars::CarData d;
+        ReadFile(hPipe, (LPVOID)&d.id, sizeof(int), &bytesWritten, NULL);
+        // Запись данных в канал
+        ReadFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
+        ReadFile(hPipe, (LPVOID)&d.Truck, sizeof(d.Truck), &bytesRead, NULL);
+        ReadFile(hPipe, (LPVOID)&d.Bus, sizeof(d.Bus), &bytesRead, NULL);
+        ReadFile(hPipe, (LPVOID)&d.Trailer, sizeof(d.Trailer), &bytesRead, NULL);
+        ReadFile(hPipe, (LPVOID)&d.volume, sizeof(d.volume), &bytesRead, NULL);
+        ReadFile(hPipe, (LPVOID)&d.Capacity, sizeof(d.Capacity), &bytesRead, NULL);
+        ReadFile(hPipe, (LPVOID)&d.price, sizeof(d.price), &bytesRead, NULL);
+        ReadFile(hPipe, (LPVOID)&d.Model, sizeof(d.Model), &bytesRead, NULL);
+        ReadFile(hPipe, (LPVOID)&d.quantity, sizeof(d.quantity), &bytesRead, NULL);
+        Cars record = Cars::fromCarData(d);
+        int index = id_rec(d.id);
+        records[index].id = record.id;
+        records[index].Truck = record.Truck;
+        records[index].Bus = record.Bus;
+        records[index].Trailer = record.Trailer;
+        records[index].volume = record.volume;
+        records[index].Capacity = record.Capacity;
+        records[index].price = record.price;
+        records[index].Model = record.Model;
+        records[index].quantity = record.quantity;
+
+        //SortRecords();
         int curr_pos =0;
         is_changed = true;
         for(auto iterator = records.begin();iterator != records.end();++iterator)
@@ -348,86 +434,109 @@ void CarDataBase::sl_SaveDataBase()
            else
                curr_pos++;
         }
+        //WriteFile(hPipe, (LPCVOID)&pos, sizeof(curr_pos), &bytesWritten, NULL);
         return curr_pos;
     }
     //возвращает запись (только для чтения) по заданному идентификатору;
-    Cars CarDataBase::record_id(unsigned int id) const
+    Cars CarDataBase::record_id()
     {
+        unsigned int tmpId;
+        // Записываем идентификатор машины в канал
+        ReadFile(hPipe, (LPVOID)&tmpId, sizeof(int), &bytesRead, NULL);
         Cars result;
+        Cars copy;
         for(auto iterator = records.begin();iterator != records.end();++iterator)
         {
-            if((*iterator).id == static_cast<int>(id))
+            if((*iterator).id == static_cast<int>(tmpId))
             {
                 result = *iterator;
             }
         }
-        return result;
+
+            Cars::CarData d = Cars::toCarData(result);
+            WriteFile(hPipe, (void*)&d.id, sizeof (d.id), &bytesWritten,NULL);
+            WriteFile(hPipe, &d.Passenger, sizeof(d.Passenger), &bytesWritten, NULL);
+            WriteFile(hPipe, &d.Truck, sizeof(d.Truck), &bytesWritten, NULL);
+            WriteFile(hPipe, &d.Bus, sizeof(d.Bus), &bytesWritten, NULL);
+            WriteFile(hPipe, &d.Trailer, sizeof(d.Trailer), &bytesWritten, NULL);
+            WriteFile(hPipe, &d.volume, sizeof(d.volume), &bytesWritten, NULL);
+            WriteFile(hPipe, &d.Capacity, sizeof(d.Capacity), &bytesWritten, NULL);
+            WriteFile(hPipe, &d.price, sizeof(d.price), &bytesWritten, NULL);
+            WriteFile(hPipe, &d.Model, sizeof(d.Model), &bytesWritten, NULL);
+            WriteFile(hPipe, &d.quantity, sizeof(d.quantity), &bytesWritten, NULL);
+
+            // Читаем информацию о машине из канала
+            // Пример чтения из канала и формирования объекта Cars carCopy;
+
+            copy = Cars::fromCarData(d);
+            return copy;
+        }
+    Cars CarDataBase::record_index()
+    {
+        //DWORD bytesWritten,bytesRead;
+        unsigned int index;
+                // Записываем идентификатор машины в канал
+         ReadFile(hPipe, (LPVOID)&index, sizeof(int), &bytesRead, NULL);
+        //QVector<Cars>::iterator i = records.begin();
+        Cars::CarData d = Cars::toCarData(records[index]);
+        WriteFile(hPipe, &d.id, sizeof(d.id), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.Passenger, sizeof(d.Passenger), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.Truck, sizeof(d.Truck), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.Bus, sizeof(d.Bus), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.Trailer, sizeof(d.Trailer), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.volume, sizeof(d.volume), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.Capacity, sizeof(d.Capacity), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.price, sizeof(d.price), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.Model, sizeof(d.Model), &bytesWritten, NULL);
+        WriteFile(hPipe, &d.quantity, sizeof(d.quantity), &bytesWritten, NULL);
+        Cars res = Cars::fromCarData(d);
+
+    return res;
+
     }
-    Cars CarDataBase::record_index(int index) const
+    int CarDataBase::getSize()
+    {
+        return size_;
+    }
+
+    int CarDataBase::id_rec(int id)
+    {
+        int index;
+        for(int i = 0;i<getSize();i++)
+        {
+            if(i == records[i].id)
+            {
+                index = i;
+                break;
+            }
+        }
+        return index;
+    }
+
+    Cars CarDataBase::index_rec(int index)
     {
         Cars result;
-        for(auto iterator = records.begin();iterator != records.end();++iterator)
+        for(int i = 0;i<getSize();i++)
         {
-            if(std::distance(records.begin(),iterator) == index)
+            if(i == index)
             {
-                result = *iterator;
+                result = records[i];
+                break;
             }
         }
         return result;
     }
 
-    QVector<Cars> CarDataBase::Records()
-    {
 
-        QVector<Cars> res;
-         req = RECORDS_REQ;
-         DWORD bytesWritten;
-         if (!WriteFile(hPipe, (LPCVOID)&req, sizeof(int), &bytesWritten, NULL)) {
-             qDebug() << "Error writing to channel: " << GetLastError();
-             CloseHandle(hPipe);
-             return res;
-         }
-
-         // Read the count of records from the channel
-         int count = records.size();
-         DWORD bytesRead;
-         if (!ReadFile(hPipe, (LPVOID)&count, sizeof(int), &bytesRead, NULL)) {
-             qDebug() << "Error read from channel: " << GetLastError();
-             CloseHandle(hPipe);
-             return res;
-         }
-         qDebug() << "Read from the channel: " << count;
-
-         for(int i = 0; i < count; i++)
-         {
-             Cars::CarData d;
-             // Read the CarData from the channel
-             WriteFile(hPipe, (void*)&d.id, sizeof(d.id), &bytesRead, NULL);
-             WriteFile(hPipe, &d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
-             WriteFile(hPipe, &d.Truck, sizeof(d.Truck), &bytesRead, NULL);
-             WriteFile(hPipe, &d.Bus, sizeof(d.Bus), &bytesRead, NULL);
-             WriteFile(hPipe, &d.Trailer, sizeof(d.Trailer), &bytesRead, NULL);
-             WriteFile(hPipe, &d.volume, sizeof(d.volume), &bytesRead, NULL);
-             WriteFile(hPipe, &d.Capacity, sizeof(d.Capacity), &bytesRead, NULL);
-             WriteFile(hPipe, &d.price, sizeof(d.price), &bytesRead, NULL);
-             WriteFile(hPipe, &d.Model, sizeof(d.Model), &bytesRead, NULL);
-
-             // Convert the CarData to a Cars object and append it to the result vector
-             res.append(Cars::fromCarData(d));
-         }
-
-         return res;
-    }
-
-    bool CarDataBase::save(QString filename) const
+    bool CarDataBase::save(QString filename)
     {
         if(filename.length() != 0){
         QFile file(filename);
         file.open(QIODevice::WriteOnly);
         if(file.isOpen()){
             QDataStream out(&file);
-            out << count();
-            for(auto iterator = records.begin();iterator !=records.end();++iterator)
+            out << records.size();
+            for(auto iterator = records.begin();iterator    !=records.end();++iterator)
             {
                 out << (*iterator).Model;
                 out << (*iterator).Passenger;
@@ -452,7 +561,7 @@ void CarDataBase::sl_SaveDataBase()
         return false;
     }
 
-    bool CarDataBase::load(QString filename)
+    /*bool CarDataBase::load(QString filename)
     {
         if(filename.length() != 0)
         {
@@ -488,7 +597,7 @@ void CarDataBase::sl_SaveDataBase()
         }
        return false;
 
-    }
+    }*/
     //Очищает все файлы
     void CarDataBase::clear()
     {
@@ -504,10 +613,6 @@ void CarDataBase::sl_SaveDataBase()
     bool CarDataBase::empty()
     {
         return size_ == 0;
-    }
-    int CarDataBase::getNextId()
-    {
-        return GetNewNext();
     }
     int CarDataBase::GetNewNext()
     {

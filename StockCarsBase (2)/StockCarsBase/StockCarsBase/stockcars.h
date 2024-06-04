@@ -42,7 +42,6 @@ private slots:
     void sl_AddCar();
     void sl_SwitchRecord();//
     void sl_EditTools();
-    void sl_CanselNewRecord();
     void sl_CreateDataBase();
 
 };

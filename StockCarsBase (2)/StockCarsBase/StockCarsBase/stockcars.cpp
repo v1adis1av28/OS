@@ -24,17 +24,17 @@ StockCars::StockCars(QWidget *parent)
     connect(ui->AddButton,SIGNAL(clicked()),this,SLOT(sl_AddCar()));
     connect(ui->TableCar,SIGNAL(cellClicked(int, int)),this,SLOT(sl_SwitchRecord()));
     connect(ui->EditBtn,SIGNAL(clicked()),this,SLOT(sl_EditTools()));
-    connect(ui->CancelBtn,SIGNAL(clicked()),this,SLOT(sl_CanselNewRecord()));
+   // connect(ui->CancelBtn,SIGNAL(clicked()),this,SLOT(sl_CanselNewRecord()));
     ui->CarsInfo->setEnabled(true);
     ui->TableCar->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->TableCar->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    ui->CancelBtn->setEnabled(false);
+//    ui->CancelBtn->setEnabled(false);
     //
     if (ui->TableCar->rowCount() == 0)
      {
        ui->SaveBtn->setEnabled(false);
        ui->DelBtn->setEnabled(false);
-       ui->CancelBtn->setEnabled(false);
+    //   ui->CancelBtn->setEnabled(false);
      }
 
     QDate curr_date = QDate::currentDate();
@@ -54,7 +54,7 @@ StockCars::StockCars(QWidget *parent)
         ui->DelBtn->setEnabled(false);
         ui->SaveBtn->setEnabled(false);
     }
-    ui->CancelBtn->setEnabled(false);
+   // ui->CancelBtn->setEnabled(false);
     QValidator *valid_input = new QRegularExpressionValidator(QRegularExpression("[A-ZА-ЯЁa-zа-яё]+[0-9]+"), this);
     ui->ModelName->setValidator(valid_input);
     ui->CarsInfo->setEnabled(false);
@@ -67,6 +67,7 @@ StockCars::StockCars(QWidget *parent)
     ui->EditBtn->setEnabled(false);
     //QTimer::singleShot(100, this, &StockCars::sl_LoadFile);
     base.Connect();
+    sl_LoadFile();
     OpenCommandButtons();
 
 }
@@ -94,25 +95,24 @@ void StockCars::ReloadInterface()
 
 void StockCars::sl_LoadFile()
 {
-    if(ui->TableCar->rowCount() != 0)
-       {
-           // Выводим предупреждающее сообщение о потере данных
-           QMessageBox msgBox;
-           msgBox.setWindowTitle("Внимание");
-           msgBox.setText("Вы уверены, что хотите загрузить базу данных?\nНесохранённые данные будут утеряны!");
-           msgBox.setStandardButtons(QMessageBox::Yes);
-           msgBox.addButton(QMessageBox::No);
-           msgBox.setDefaultButton(QMessageBox::No);
 
-           if(msgBox.exec() == QMessageBox::No)
-           {
-               return;
-           }
-       }
-
-       // Очищаем таблицу перед загрузкой новых данных
        ui->TableCar->clearContents();
        ui->TableCar->setRowCount(0);
+       int pos = ui->TableCar->rowCount();
+       ui->TableCar->insertRow(pos);
+       int ins = ui->TableCar->rowCount();
+        for(int i = 0;i<base.count();i++)
+           {
+               Cars tmp = base.record_index(i);
+               QString str = tmp.Model;
+               QString id = QString::number(tmp.id);
+               QString car_price = QString::number(tmp.price);
+               QString car_quantity = QString::number(tmp.quantity);
+               ui->TableCar->setItem(ins-1,0,new QTableWidgetItem(str));
+               ui->TableCar->setItem(ins-1,1,new QTableWidgetItem(car_quantity));
+               ui->TableCar->setItem(ins-1,2,new QTableWidgetItem(car_price));
+               ui->TableCar->setItem(ins-1,3,new QTableWidgetItem(id));
+           }
        //base.sl_UploadFile();
        //base.SortRecords();
        OpenCommandButtons();
@@ -167,7 +167,7 @@ void StockCars::sl_CreateDataBase()
                 ui->Price_sp->setEnabled(true);
                 ui->Quantity_sp->setEnabled(true);
                 ui->ModelName->setEnabled(true);
-                ui->CancelBtn->setEnabled(false);
+                //ui->CancelBtn->setEnabled(false);
                 ui->DelBtn->setEnabled(false);
                 ui->ModelName->clear();
                 ui->EngineVolume_sp->setValue(0.5);
@@ -187,49 +187,9 @@ void StockCars::sl_CreateDataBase()
 void StockCars::closeEvent(QCloseEvent *event) {
     QMainWindow::closeEvent(event);
     base.sl_SaveDataBase();
+    base.Disconnect();
 }
 
-void StockCars::sl_CanselNewRecord()
-{
-    if(ui->TableCar->rowCount() == 0)
-    {
-        ui->CancelBtn->setEnabled(false);
-    }
-    int current_row = ui->TableCar->currentRow();
-    ui->TableCar->removeRow(current_row);
-    base.remove(current_row);
-    int row_size = ui->TableCar->rowCount();
-    if(row_size == current_row)
-    {
-        ui->TableCar->setCurrentCell(current_row-1,0);
-        base.SortRecords();
-    }
-    else if(current_row == 0)
-    {
-        ui->TableCar->setCurrentCell(0,0);
-        base.SortRecords();
-    }
-    else
-    {
-        ui->TableCar->setCurrentCell(current_row,0);
-        base.SortRecords();
-    }
-
-    base.SortRecords();
-    int curr_size = ui->TableCar->rowCount();
-    if(curr_size == 0)
-    {
-        ui->DelBtn->setEnabled(false);
-        ui->SaveBtn->setEnabled(false);
-    }
-    ui->CancelBtn->setEnabled(false);
-    ui->CarsInfo->setEnabled(false);
-    ui->CarType_gb->setEnabled(false);
-    ui->CurrentDate_sp->setEnabled(false);
-    ui->Price_sp->setEnabled(false);
-    ui->Quantity_sp->setEnabled(false);
-    ui->ModelName->setEnabled(false);
-}
 
 void StockCars::sl_Delete()
 {
@@ -238,7 +198,7 @@ void StockCars::sl_Delete()
     if(RowCount == 0)
     {
         ui->DelBtn->setEnabled(false);
-        ui->CancelBtn->setEnabled(false);
+       // ui->CancelBtn->setEnabled(false);
         ui->SaveBtn->setEnabled(false);
 
     }
@@ -266,11 +226,11 @@ void StockCars::sl_Delete()
         sl_SwitchRecord();
     }
 
-    base.SortRecords();
+    //base.SortRecords();
     int curr_size = ui->TableCar->rowCount();
     if(curr_size == 0)
     {
-        ui->CancelBtn->setEnabled(false);
+        //ui->CancelBtn->setEnabled(false);
         ui->DelBtn->setEnabled(false);
         ui->SaveBtn->setEnabled(false);
     }
@@ -296,7 +256,7 @@ void StockCars::sl_AddCar()
 {
     ui->DelBtn->setEnabled(true);
     ui->SaveBtn->setEnabled(true);
-    ui->CancelBtn->setEnabled(true);
+    //ui->CancelBtn->setEnabled(true);
     ui->CarsInfo->setEnabled(true);
     ui->CarType_gb->setEnabled(true);
     ui->CurrentDate_sp->setEnabled(true);
@@ -304,24 +264,26 @@ void StockCars::sl_AddCar()
     ui->Quantity_sp->setEnabled(true);
     ui->ModelName->setEnabled(true);
     Cars tmp;
+    tmp.Model = "vlad";
     recordType = base.append(tmp);
     int pos = ui->TableCar->rowCount();
+    int count = base.count();
     ui->TableCar->insertRow(pos);
     int ins = ui->TableCar->rowCount();
-   /* for(int i = 0;i<base.count();i++)
-    {
-        tmp = base.record_index(i);
-        QString str = tmp.Model;
-        QString id = QString::number(tmp.id);
-        QString car_price = QString::number(tmp.price);
-        QString car_quantity = QString::number(tmp.quantity);
-        ui->TableCar->setItem(ins-1,0,new QTableWidgetItem(str));
-        ui->TableCar->setItem(ins-1,1,new QTableWidgetItem(car_quantity));
-        ui->TableCar->setItem(ins-1,2,new QTableWidgetItem(car_price));
-        ui->TableCar->setItem(ins-1,3,new QTableWidgetItem(id));
-    }
-    base.SortRecords();
-    */ui->ModelName->clear();
+   for(int i = 0;i<count;i++)
+        {
+            tmp = base.record_index(i);
+            QString str = tmp.Model;
+            QString id = QString::number(tmp.id);
+            QString car_price = QString::number(tmp.price);
+            QString car_quantity = QString::number(tmp.quantity);
+            ui->TableCar->setItem(ins-1,0,new QTableWidgetItem(str));
+            ui->TableCar->setItem(ins-1,1,new QTableWidgetItem(car_quantity));
+            ui->TableCar->setItem(ins-1,2,new QTableWidgetItem(car_price));
+            ui->TableCar->setItem(ins-1,3,new QTableWidgetItem(id));
+        }
+    //base.SortRecords();
+    ui->ModelName->clear();
     ui->EngineVolume_sp->setValue(0.5);
     ui->Capacity_sp->setValue(1);
     ui->Carrying_sp->setValue(100);
@@ -332,7 +294,7 @@ void StockCars::sl_AddCar()
     ui->Quantity_sp->setValue(0);
     QDate curr_date = QDate::currentDate();
     ui->CurrentDate_sp->setDate(curr_date);
-    ui->TableCar->setCurrentCell(ins, 0);
+    ui->TableCar->setCurrentCell(ins-1, 0);
 }
 
 void StockCars::sl_EditTools()
@@ -357,7 +319,8 @@ void StockCars::sl_Save()
     }
 
     int pos = ui->TableCar->currentRow();// позиция элемента
-    Cars tmp = base.record_id(base.count()-1);
+    int id =  ui->TableCar->item(pos,3)->text().toInt();;
+    Cars tmp = base.record_id(id);
     tmp.volume = ui->EngineVolume_sp->value();
     tmp.price = ui->Price_sp->value();
     tmp.Capacity = ui->Capacity_sp->value();
@@ -375,21 +338,25 @@ void StockCars::sl_Save()
     //int row_count = ui->TableCar->rowCount();
     tmp.id = ui->TableCar->item(pos,3)->text().toInt();
     int new_pos = base.update(tmp);
-    ui->TableCar->setRowCount(0);
-   for(int i = 0;i<base.count();++i)
+    int ins = ui->TableCar->rowCount();
+    ui->TableCar->setItem(pos,0,new QTableWidgetItem(tmp.Model));
+    ui->TableCar->setItem(pos,1,new QTableWidgetItem(QString::number(tmp.quantity)));
+    ui->TableCar->setItem(pos,2,new QTableWidgetItem(QString::number(tmp.price)));
+    ui->TableCar->setItem(pos,3,new QTableWidgetItem(QString::number(tmp.id)));
+    //ui->TableCar->setRowCount(0);
+   /*for(int i = 0;i<base.count();++i)
    {
-       int pos = ui->TableCar->rowCount();
-       ui->TableCar->insertRow(pos);
-       Cars tmp = base.record_index(i);
+       int curr_id =  ui->TableCar->item(i,3)->text().toInt();;
+       Cars tmp = base.record_id(curr_id);
        QString str = tmp.Model;
        QString car_price = QString::number(tmp.price);
        QString car_quantity = QString::number(tmp.quantity);
-       ui->TableCar->setItem(i,0,new QTableWidgetItem(str));
-       ui->TableCar->setItem(i,1,new QTableWidgetItem(car_quantity));
-       ui->TableCar->setItem(i,2,new QTableWidgetItem(car_price));
-       ui->TableCar->setItem(i,3,new QTableWidgetItem(QString::number(tmp.id)));
-   }
-    ui->TableCar->setCurrentCell(new_pos,0);
+       ui->TableCar->setItem(ins-1,0,new QTableWidgetItem(str));
+       ui->TableCar->setItem(ins-1,1,new QTableWidgetItem(car_quantity));
+       ui->TableCar->setItem(ins-1,2,new QTableWidgetItem(car_price));
+       ui->TableCar->setItem(ins-1,3,new QTableWidgetItem(QString::number(tmp.id)));
+   }*/
+    ui->TableCar->setCurrentCell(ui->TableCar->currentRow(),0);
     ui->CarsInfo->setEnabled(false);
     ui->CarType_gb->setEnabled(false);
     ui->CurrentDate_sp->setEnabled(false);
@@ -407,14 +374,14 @@ void StockCars::sl_SwitchRecord()
     {
         ui->SaveBtn->setEnabled(false);
         ui->DelBtn->setEnabled(false);
-        ui->CancelBtn->setEnabled(false);
+       // ui->CancelBtn->setEnabled(false);
         return;
     }
 
     // Включаем кнопки сохранить, удалить и отменить
     ui->SaveBtn->setEnabled(true);
     ui->DelBtn->setEnabled(true);
-    ui->CancelBtn->setEnabled(true);
+   // ui->CancelBtn->setEnabled(true);
 
     // Получаем id текущей строки
     int curId = ui->TableCar->item(current_row, 3)->text().toInt();
@@ -428,22 +395,22 @@ void StockCars::sl_SwitchRecord()
 
     // Очищаем поле модели перед установкой нового значения
     ui->ModelName->clear();
-
+    Cars tmp = base.record_id(curId);
     // Устанавливаем новое значение для поля модели
-    ui->ModelName->setText(base.record_id(curId).Model);
-    ui->EngineVolume_sp->setValue(base.record_id(curId).volume);
-    ui->Capacity_sp->setValue(base.record_id(curId).Capacity);
-    ui->Carrying_sp->setValue(base.record_id(curId).Carrying);
-    ui->Acceleration_sp->setValue(base.record_id(curId).Acceleration);
-    ui->MaxSpeed_sp->setValue(base.record_id(curId).MaxSpeed);
-    ui->Climat_flag->setChecked(base.record_id(curId).Climat);
-    ui->Price_sp->setValue(base.record_id(curId).price);
-    ui->Quantity_sp->setValue(base.record_id(curId).quantity);
-    ui->CurrentDate_sp->setDate(base.record_id(curId).date);
-    ui->PassengerCar_rb->setChecked(base.record_id(curId).Passenger);
-    ui->Truck_rb->setChecked(base.record_id(curId).Truck);
-    ui->Bus_rb->setChecked(base.record_id(curId).Bus);
-    ui->Trailer_rb->setChecked(base.record_id(curId).Trailer);
+    ui->ModelName->setText(tmp.Model);
+    ui->EngineVolume_sp->setValue(tmp.volume);
+    ui->Capacity_sp->setValue(tmp.Capacity);
+    ui->Carrying_sp->setValue(tmp.Carrying);
+    ui->Acceleration_sp->setValue(tmp.Acceleration);
+    ui->MaxSpeed_sp->setValue(tmp.MaxSpeed);
+    ui->Climat_flag->setChecked(tmp.Climat);
+    ui->Price_sp->setValue(tmp.price);
+    ui->Quantity_sp->setValue(tmp.quantity);
+    ui->CurrentDate_sp->setDate(tmp.date);
+    ui->PassengerCar_rb->setChecked(tmp.Passenger);
+    ui->Truck_rb->setChecked(tmp.Truck);
+    ui->Bus_rb->setChecked(tmp.Bus);
+    ui->Trailer_rb->setChecked(tmp.Trailer);
 }
 
 

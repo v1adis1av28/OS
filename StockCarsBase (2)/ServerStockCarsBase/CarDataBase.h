@@ -15,26 +15,26 @@ public:
     void SortRecords();
     bool start();
     //Возвращает кол-во записей
-    int count() const;
+    int count();
     void append();
 
     void append_load(Cars& record);
-    void remove(unsigned int id);
+    void remove();
 
     bool sl_UploadFile();
 void sl_SaveDataBase();
-
-    int update(Cars& record);
+    int id_rec(int id);
+    int update();
     //возвращает запись (только для чтения) по заданному идентификатору;
-    Cars record_id(unsigned int id) const;
-    Cars record_index(int index) const;
-
+    Cars record_id();
+    Cars record_index();
+    Cars index_rec(int index);
     QVector<Cars> Records();
-    bool save(QString filename) const;
-    bool load(QString filename);
+    bool save(QString filename);
+    //bool load(QString filename);
     //Очищает все файлы
     void clear();
-
+    int getSize();
     //показывает, имеются ли изменения БД после ее загрузки/сохранения
     bool IsModified() const;
     bool empty();
@@ -44,31 +44,31 @@ void sl_SaveDataBase();
 
 private:
     int size_ = 0;
-    int nextId;
-    std::vector<Cars> records;
+    QVector<Cars> records;
     bool is_changed = false;
     //const LPCTSTR FILENAME = TEXT("main.dd");
-       // const LPCTSTR SERVERNAME = TEXT(".exe");
+        const LPCTSTR SERVERNAME = TEXT("G:\\StockCarsBase\\ServerStockCarsBase\\main.exe");
         const LPCTSTR SERVERPIPE = TEXT("\\\\.\\pipe\\StockCarsBasePipe");
         const DWORD
-           FINISH_REQ  = 0,
-           APPEND_REQ  = 1,
-           REMOVE_REQ  = 2,
-           SAVE_REQ    = 3,
-           RECORD_REQ  = 4,
-           RECORDS_REQ = 5,
-           COUNT_REQ   = 6,
-           UPDATE_REQ  = 7,
-           APPEND_LOAD_REQ = 8,
-           RECORD_INDEX_REQ = 9,
-           RECORD_ID_REQ = 10;
+        FINISH_REQ  = 0,
+        APPEND_REQ  = 1,
+        RECORDS_REQ = 3,
+        RECORD_ID_REQ =4,
+        RECORD_INDEX_REQ =5,
+        COUNT_REQ=6,
+        UPDATE_REQ=7,
+        REMOVE_REQ=8,
+        SAVE_REQ=9,
+        LOAD_REQ=10,
+        SAVE_DB =11;
+
         HANDLE hPipe;
         DWORD mode, bytesWritten, bytesRead;
         char buffer[1024];
         int bufferSize = 1024;
         int req, pos;
-
-        unsigned int id = 0;
+        int nextId = 1;
+        unsigned int id = 1;
 };
 
 #endif // CARDATABASE_H

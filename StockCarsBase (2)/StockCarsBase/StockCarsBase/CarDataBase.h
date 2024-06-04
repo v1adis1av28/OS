@@ -17,7 +17,7 @@ public:
     CarDataBase()
     {}
     void SortRecords();
-    int count() const;
+    int count();
     int append(Cars& record);
     int append_load(Cars& record);
     void sl_addCar(Cars& tmp);
@@ -41,21 +41,21 @@ private:
     int nextId;
     //std::vector<Cars> records;
     bool is_changed = false;
-    const LPCTSTR SERVERNAME = TEXT("E:\\StockCarsBase (2)\\ServerStockCarsBase\\bankserver.exe");
+    const LPCTSTR SERVERNAME = TEXT("G:\\StockCarsBase\\ServerStockCarsBase\\main.exe");
     const LPCTSTR SERVERPIPE = TEXT("\\\\.\\pipe\\StockCarsBasePipe");
 
     const DWORD
-       FINISH_REQ  = 0,
-       APPEND_REQ  = 1,
-       REMOVE_REQ  = 2,
-       SAVE_REQ    = 3,
-       RECORD_REQ  = 4,
-       RECORDS_REQ = 5,
-       COUNT_REQ   = 6,
-       UPDATE_REQ  = 7,
-       APPEND_LOAD_REQ = 8,
-       RECORD_INDEX_REQ = 9,
-       RECORD_ID_REQ = 10;
+    FINISH_REQ  = 0,
+    APPEND_REQ  = 1,
+    RECORDS_REQ = 3,
+    RECORD_ID_REQ =4,
+    RECORD_INDEX_REQ =5,
+    COUNT_REQ=6,
+    UPDATE_REQ=7,
+    REMOVE_REQ=8,
+    SAVE_REQ=9,
+    LOAD_REQ=10,
+    SAVE_DB =11;
 
      STARTUPINFO si;
      PROCESS_INFORMATION pi;
@@ -64,7 +64,7 @@ private:
      char buffer[1024];
      int bufferSize = 1024;
      int req, pos;
-     unsigned int id = 0;
+     unsigned int id    ;
      Cars fromCarData(Cars::CarData);
      Cars::CarData toCarData(Cars);
 

@@ -420,13 +420,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="CancelBtn">
-         <property name="text">
-          <string>Отмена</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QPushButton" name="DelBtn">
          <property name="text">
           <string>Удалить</string>
