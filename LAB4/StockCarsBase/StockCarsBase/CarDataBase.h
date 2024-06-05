@@ -41,7 +41,7 @@ private:
     int nextId;
     //std::vector<Cars> records;
     bool is_changed = false;
-    const LPCTSTR SERVERNAME = TEXT("G:\\OSLAB\\ServerStockCarsBase\\release\\ServerStockCarsBase.exe");
+    const LPCTSTR SERVERNAME = TEXT("G:\\LAB4\\ServerStockCarsBase\\release\\ServerStockCarsBase.exe");
     const LPCTSTR SERVERPIPE = TEXT("\\\\.\\pipe\\StockCarsBasePipe");
 
     const DWORD
@@ -64,7 +64,7 @@ private:
      char buffer[1024];
      int bufferSize = 1024;
      int req, pos;
-     unsigned int id    ;
+     unsigned int id;
      Cars fromCarData(Cars::CarData);
      Cars::CarData toCarData(Cars);
 

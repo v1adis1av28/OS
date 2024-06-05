@@ -1,7 +1,16 @@
 #include "CarDataBase.h"
 #include "string"
 // Запустить сервер
-bool CarDataBase::start() {
+
+CarDataBase::CarDataBase()
+{
+    // Ожидание соединения
+    if (!sl_UploadFile()) {
+        qDebug() << "Error while loading database: " << GetLastError();
+    }
+
+}
+/*bool CarDataBase::start() {
 
     // Создание именованного канала
     hPipe = CreateNamedPipe(
@@ -15,7 +24,18 @@ bool CarDataBase::start() {
         NULL                                                // Защита по умолчанию
         );
 
-    if (hPipe == INVALID_HANDLE_VALUE) {
+    HANDLE hServerPipe = CreateNamedPipe(
+        SERVERPIPE,                                         // Имя канала
+        PIPE_ACCESS_DUPLEX,                                 // Дуплексный доступ
+        PIPE_TYPE_MESSAGE | PIPE_READMODE_BYTE | PIPE_WAIT, // Режимы чтения и ожидания
+        PIPE_UNLIMITED_INSTANCES,                           // Количество экземпляров
+        1024,                                               // Размер выходного буфера
+        1024,                                               // Размер входного буфера
+        5000,                                               // Время ожидания по умолчанию (5 секунд)
+        NULL                                                // Защита по умолчанию
+        );
+
+    if (hServerPipe == INVALID_HANDLE_VALUE) {
         qDebug() << "Error creating channel: " << GetLastError();
         //cout << "Error creating channel: " << GetLastError();
         return 0;
@@ -42,8 +62,48 @@ bool CarDataBase::start() {
         return 0;
     }
     qDebug() << "Database successfully load.\n";
+    // Цикл подключения клиентов
+        while (true) {
+            // Ожидание соединения
+            if (!ConnectNamedPipe(hServerPipe, NULL)) {
+                qDebug() << "Ошибка при ожидании подключения: " << GetLastError();
+                CloseHandle(hServerPipe);
+                return 0;
+            }
+            qDebug() << "Успешное подключение.\n";
 
-    const DWORD
+            // Создание нового именованного канала для взаимодействия с клиентом
+            std::wstring clientPipeName = SERVERPIPE;
+            clientPipeName += std::to_wstring(GetCurrentThreadId());
+
+            HANDLE hClientPipe = CreateNamedPipe(
+                clientPipeName.c_str(),
+                PIPE_ACCESS_DUPLEX,
+                PIPE_TYPE_MESSAGE | PIPE_READMODE_BYTE | PIPE_WAIT,
+                PIPE_UNLIMITED_INSTANCES,
+                1024,
+                1024,
+                5000,
+                NULL
+                );
+
+            if (hClientPipe == INVALID_HANDLE_VALUE) {
+                qDebug() << "Ошибка создания канала для клиента: " << GetLastError();
+                CloseHandle(hServerPipe);
+                return 0;
+            }
+            qDebug() << "Канал для клиента успешно создан.\n";
+
+            // Создание потока для обслуживания клиента
+            CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&CarDataBase::handleClient, (LPVOID)hClientPipe, 0, NULL);
+
+            QThread::sleep(1000);
+            qDebug() << "Ожидание следующего клиента.\n";
+
+            // Закрытие канала приема подключений
+            DisconnectNamedPipe(hServerPipe);
+        }
+/*    const DWORD
             FINISH_REQ  = 0,
             APPEND_REQ  = 1,
             RECORDS_REQ = 3,
@@ -95,6 +155,8 @@ bool CarDataBase::start() {
 
     return 1;
 }
+*/
+
 
 void CarDataBase::SortRecords()
     {
@@ -113,7 +175,7 @@ void CarDataBase::SortRecords()
 
 
     //Возвращает кол-во записей
-    int CarDataBase::count()
+    int CarDataBase::count(HANDLE hPipe)
     {
         int size = records.size();
         WriteFile(hPipe,(LPVOID)&size,sizeof(int),&bytesWritten,NULL);
@@ -132,7 +194,7 @@ void CarDataBase::SortRecords()
         }
         return ++max_id;
     }
-    void CarDataBase::append()
+    void CarDataBase::append(HANDLE hPipe)
     {
             Cars::CarData d;
             // Запись данных в канал
@@ -155,7 +217,7 @@ void CarDataBase::SortRecords()
         is_changed = true;
 
     }
-    QVector<Cars> CarDataBase::Records()
+    QVector<Cars> CarDataBase::Records(HANDLE hPipe)
     {
 
         QVector<Cars> res;
@@ -191,7 +253,7 @@ void CarDataBase::SortRecords()
     }
 
 
-    void CarDataBase::remove()
+    void CarDataBase::remove(HANDLE hPipe)
     {
         int id;
         ReadFile(hPipe,(LPVOID)&id,sizeof (int),&bytesRead,NULL);
@@ -216,7 +278,7 @@ void CarDataBase::SortRecords()
             // Загружаем базу данных из файла
             QString fileName = "G:/CarTest.records";
             qDebug() << "Пытаемся открыть файл" << fileName;
-            HANDLE hFile = CreateFile(reinterpret_cast<LPCWSTR>(fileName.utf16()), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+            HANDLE hFile = CreateFile(reinterpret_cast<LPCWSTR>(fileName.utf16()), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (hFile == INVALID_HANDLE_VALUE) {
                 // Обработка ошибки открытия файла
                 //QMessageBox::critical(nullptr, "Ошибка", "Не удалось открыть файл для чтения.");
@@ -321,7 +383,7 @@ void CarDataBase::sl_SaveDataBase()
     if (path.isEmpty())
         return;
 
-    HANDLE hFile = CreateFile(reinterpret_cast<LPCWSTR>(path.utf16()), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = CreateFile(reinterpret_cast<LPCWSTR>(path.utf16()), GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         //QMessageBox::critical(nullptr, "Ошибка", "Не удалось открыть файл для записи.");
         return;
@@ -397,7 +459,7 @@ void CarDataBase::sl_SaveDataBase()
 }
 
 
-    int CarDataBase::update()
+    int CarDataBase::update(HANDLE hPipe)
     {
         Cars::CarData d;
         ReadFile(hPipe, (LPVOID)&d.id, sizeof(int), &bytesWritten, NULL);
@@ -439,7 +501,7 @@ void CarDataBase::sl_SaveDataBase()
         return curr_pos;
     }
     //возвращает запись (только для чтения) по заданному идентификатору;
-    Cars CarDataBase::record_id()
+    Cars CarDataBase::record_id(HANDLE hPipe)
     {
         unsigned int tmpId;
         // Записываем идентификатор машины в канал
@@ -472,7 +534,7 @@ void CarDataBase::sl_SaveDataBase()
             copy = Cars::fromCarData(d);
             return copy;
         }
-    Cars CarDataBase::record_index()
+    Cars CarDataBase::record_index(HANDLE hPipe)
     {
         //DWORD bytesWritten,bytesRead;
         unsigned int index;

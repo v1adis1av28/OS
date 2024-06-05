@@ -69,6 +69,9 @@ StockCars::StockCars(QWidget *parent)
     base.Connect();
     sl_LoadFile();
     OpenCommandButtons();
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &StockCars::updateFiles); // Подключите слот updateFiles к сигналу timeout
+    timer->start(15000); // Запустите таймер с интервалом в 15 секунд
 
 }
 
@@ -124,6 +127,14 @@ void StockCars::sl_LoadFile()
         }
 }
 
+void StockCars::updateFiles()
+{
+
+    sl_LoadFile();
+    base.sl_SaveDataBase();
+
+    qDebug() << "Data changed";
+}
 
 void StockCars::OpenCommandButtons()
 {
