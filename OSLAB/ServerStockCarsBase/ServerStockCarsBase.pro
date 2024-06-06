@@ -1,8 +1,9 @@
 QT -= gui
 
-CONFIG += c++11 console
-CONFIG -= app_bundle
+CONFIG += c++17 cmdline
 
+LIBS += E:\Qt\5.14.2\mingw73_64\lib\ws2_32.lib
+LIBS += -lws2_32
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the

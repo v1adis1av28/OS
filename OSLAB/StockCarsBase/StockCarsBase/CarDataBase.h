@@ -2,6 +2,9 @@
 #define CARDATABASE_H
 #include <vector>
 #include <QDataStream>
+#include <winsock2.h>
+#pragma comment(lib,"ws2_32.lib")
+#include <ws2tcpip.h>
 #include <QMessageBox>
 #include <QFile>
 #include <windows.h>
@@ -14,8 +17,7 @@
 class CarDataBase
 {
 public:
-    CarDataBase()
-    {}
+    CarDataBase();
     void SortRecords();
     int count();
     int append(Cars& record);
@@ -41,7 +43,7 @@ private:
     int nextId;
     //std::vector<Cars> records;
     bool is_changed = false;
-    const LPCTSTR SERVERNAME = TEXT("G:\\LAB4\\ServerStockCarsBase\\release\\ServerStockCarsBase.exe");
+    //const LPCTSTR SERVERNAME = TEXT("G:\\OSLAB\\ServerStockCarsBase\\debug\\ServerStockCarsBase.exe");
     const LPCTSTR SERVERPIPE = TEXT("\\\\.\\pipe\\StockCarsBasePipe");
 
     const DWORD
@@ -56,17 +58,14 @@ private:
     SAVE_REQ=9,
     LOAD_REQ=10,
     SAVE_DB =11;
+    int req, pos;
+     SOCKET sock = INVALID_SOCKET;
+     //char buffer[1024];
+    // int bufferSize = 1024;
 
-     STARTUPINFO si;
-     PROCESS_INFORMATION pi;
-     HANDLE hPipe;
-     DWORD mode, bytesWritten, bytesRead;
-     char buffer[1024];
-     int bufferSize = 1024;
-     int req, pos;
      unsigned int id;
-     Cars fromCarData(Cars::CarData);
-     Cars::CarData toCarData(Cars);
+     Cars fromCarData(CarData);
+     CarData toCarData(Cars);
 
 };
 

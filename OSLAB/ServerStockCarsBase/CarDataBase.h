@@ -9,30 +9,28 @@
 #include <qdebug.h>
 #include <algorithm> // Для std::fill
 #include <winbase.h>
-#include <QThread>
-
 class CarDataBase
 {
 public:
-    CarDataBase();
     void SortRecords();
+    CarDataBase();
     bool start();
     //Возвращает кол-во записей
-    int count(HANDLE hPipe);
-    void append(HANDLE hPipe);
+    int count(SOCKET);
+    void append(SOCKET);
 
     void append_load(Cars& record);
-    void remove(HANDLE hPipe);
+    void remove(SOCKET);
 
     bool sl_UploadFile();
 void sl_SaveDataBase();
     int id_rec(int id);
-    int update(HANDLE hPipe);
+    int update(SOCKET);
     //возвращает запись (только для чтения) по заданному идентификатору;
-    Cars record_id(HANDLE hPipe);
-    Cars record_index(HANDLE hPipe);
+    Cars record_id(SOCKET);
+    Cars record_index(SOCKET);
     Cars index_rec(int index);
-    QVector<Cars> Records(HANDLE hPipe);
+    QVector<Cars> Records(SOCKET);
     bool save(QString filename);
     //bool load(QString filename);
     //Очищает все файлы
@@ -50,8 +48,8 @@ private:
     QVector<Cars> records;
     bool is_changed = false;
     //const LPCTSTR FILENAME = TEXT("main.dd");
-        const LPCTSTR SERVERNAME = TEXT("G:\\LAB4\\ServerStockCarsBase\\release\\ServerStockCarsBase.exe");
-       // const LPCTSTR SERVERPIPE = TEXT("\\\\.\\pipe\\StockCarsBasePipe");
+    //const LPCTSTR SERVERNAME = TEXT("G:\\OSLAB\\ServerStockCarsBase\\debug\\ServerStockCarsBase.exe");
+        const LPCTSTR SERVERPIPE = TEXT("\\\\.\\pipe\\StockCarsBasePipe");
         const DWORD
         FINISH_REQ  = 0,
         APPEND_REQ  = 1,
@@ -65,15 +63,13 @@ private:
         LOAD_REQ=10,
         SAVE_DB =11;
 
-       // HANDLE hPipe;
-        DWORD mode, bytesWritten, bytesRead;
-        char buffer[1024];
-        int bufferSize = 1024;
+        HANDLE hPipe;
+      //  DWORD mode, bytesWritten, bytesRead;
+        //char buffer[1024];
+      //  int bufferSize = 1024;
         int req, pos;
         int nextId = 1;
         unsigned int id = 1;
-       // static DWORD WINAPI handleClient(LPVOID);
-        //void handleClientLogic(LPVOID);
 };
 
 #endif // CARDATABASE_H

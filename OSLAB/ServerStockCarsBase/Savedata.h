@@ -4,6 +4,24 @@
 #include<QDate>
 
 
+struct CarData {
+    char Model[100];    // Модель автомобиля
+    int id;             // ID
+    int quantity;       // Количество
+    int price;          // Цена
+    double volume;      // Объем
+    int Capacity;       // Вместимость
+    int Carrying;       // Грузоподъемность
+    int Acceleration;   // Ускорение
+    int MaxSpeed;       // Максимальная скорость
+    bool Climat;        // Климат-контроль
+    bool Passenger;     // Пассажирский
+    bool Truck;         // Грузовик
+    bool Trailer;       // Прицеп
+    bool Bus;           // Автобус
+    char date[20];      // Дата
+};
+
 class Cars
 {
 public:
@@ -24,23 +42,6 @@ public:
         bool Bus;
         QDate date;
 
-        struct CarData {
-            char Model[100];    // Модель автомобиля
-            int id;             // ID
-            int quantity;       // Количество
-            int price;          // Цена
-            double volume;      // Объем
-            int Capacity;       // Вместимость
-            int Carrying;       // Грузоподъемность
-            int Acceleration;   // Ускорение
-            int MaxSpeed;       // Максимальная скорость
-            bool Climat;        // Климат-контроль
-            bool Passenger;     // Пассажирский
-            bool Truck;         // Грузовик
-            bool Trailer;       // Прицеп
-            bool Bus;           // Автобус
-            char date[20];      // Дата
-        };
 
         static CarData toCarData(const Cars &car) {
             CarData data;

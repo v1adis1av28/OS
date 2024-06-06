@@ -1,64 +1,46 @@
 #include "CarDataBase.h"
 #include <iostream>
 
+WORD wVersionRequested;
+WSADATA wsaData;
+int err;
 
 using namespace std;
 
+CarDataBase::CarDataBase()
+{
+
+}
+
 bool CarDataBase::Connect() {
-    ZeroMemory( &si, sizeof(si) );
-    si.cb = sizeof(si);
-
+   // ZeroMemory( &si, sizeof(si) );
+   // si.cb = sizeof(si);
+    wVersionRequested = MAKEWORD(2,2);
     // Создание нового процесса
-   // if (!CreateProcess(SERVERNAME, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-//    {
-   //     qDebug() << "Start server error: " << GetLastError();
-   //     return 0;
-   // }
-
-   // qDebug() << "Start server successful.\n";
-
-   // QThread::msleep(1000);
-
-    hPipe = CreateFile(
-        SERVERPIPE,                     // Имя канала
-        GENERIC_READ | GENERIC_WRITE,   // Доступ к чтению и записи
-        0,                              // Не разделять ресурс между потоками
-        NULL,                           // Дескриптор безопасности по умолчанию
-        OPEN_EXISTING,                  // Открыть существующий канал
-        0,                              // Флаги и атрибуты по умолчанию
-        NULL                            // Необходимость дополнительных атрибутов
-        );
-
-    if (hPipe == INVALID_HANDLE_VALUE) {
-        qDebug() << "Connect error: " << GetLastError();
+    err = WSAStartup(wVersionRequested,&wsaData);
+    if(err !=0)
+    {
+        qDebug() << "Error Wsastarrtup";
         return 0;
     }
 
-    qDebug() << "Connect successful.";
+    sock = socket(AF_INET,SOCK_STREAM,0);
+    sockaddr_in sain;
+    sain.sin_family = AF_INET;
+    sain.sin_port = htons(52000);
+    sain.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    ::connect(sock, (sockaddr *)&sain, sizeof(sain));
+    qDebug() << sock;
     return 1;
 }
 
-void CarDataBase::SortRecords(){}
 // Отключение от серевера
 bool CarDataBase::Disconnect() {
     req = FINISH_REQ;
-    DWORD bytesWritten;
-    if (!WriteFile(hPipe, (LPCVOID)&req, sizeof(int), &bytesWritten, NULL)) {
-        qDebug() << "Error writing to channel: " << GetLastError();
-        CloseHandle(hPipe);
-        return 0;
-    }
-
-    // Закрытие дескриптора канала
-    CloseHandle(hPipe);
-
-    // Закрытие дескрипторов процесса и потока
-    //CloseHandle(pi.hProcess);
-   // CloseHandle(pi.hThread);
-
-    // Обнуление дескрипторов процесса и потока
-   // ZeroMemory(&pi, sizeof(pi));
-
+    send(sock,(char*)&req,sizeof(req),0);
+    closesocket(sock);
+    WSACleanup();
     return 1;
 
 }
@@ -66,12 +48,14 @@ bool CarDataBase::Disconnect() {
 int CarDataBase::count()
 {
     req = COUNT_REQ;
-    WriteFile(hPipe, &req, sizeof(req), &bytesWritten, NULL);
+    //WriteFile(hPipe, &req, sizeof(req), &bytesWritten, NULL);
+    send(sock,(char*)&req,sizeof (req),0);
     int count;
-    if(!ReadFile(hPipe, (LPVOID)&count, sizeof(int), &bytesRead, NULL))
+    /*if(!ReadFile(hPipe, (LPVOID)&count, sizeof(int), &bytesRead, NULL))
     {
        qDebug() << "NO READ FROM COUNT METHOD!!";
-    }
+    }*/
+    recv(sock,(char*)&count,sizeof(count),0);
     return count;
 }
 
@@ -79,17 +63,18 @@ int CarDataBase::count()
 Cars CarDataBase::record_index(unsigned int index) {
     Cars carCopy;
     req = RECORD_INDEX_REQ;
-    DWORD bytesWritten;
+    /*DWORD bytesWritten;
     if (!WriteFile(hPipe, (LPCVOID)&req, sizeof(int), &bytesWritten, NULL)) {
         qDebug() << "Error writing to channel: " << GetLastError();
         return carCopy; // Возвращаем пустую копию объекта, чтобы указать ошибку
-    }
+    }*/
+    send(sock,(char*)&req,sizeof(req),0);
 
     // Записываем индекс в канал
-    WriteFile(hPipe, (LPCVOID)&index, sizeof(int), &bytesWritten, NULL);
-
-    Cars::CarData d;
-    ReadFile(hPipe, (void*)&d.id, sizeof(d.id), &bytesRead, NULL);
+    //WriteFile(hPipe, (LPCVOID)&index, sizeof(int), &bytesWritten, NULL);
+    send(sock,(char*)&index,sizeof(req),0);
+    CarData d;
+    /*ReadFile(hPipe, (void*)&d.id, sizeof(d.id), &bytesRead, NULL);
     ReadFile(hPipe, &d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
     ReadFile(hPipe, &d.Truck, sizeof(d.Truck), &bytesRead, NULL);
     ReadFile(hPipe, &d.Bus, sizeof(d.Bus), &bytesRead, NULL);
@@ -99,7 +84,18 @@ Cars CarDataBase::record_index(unsigned int index) {
     ReadFile(hPipe, &d.price, sizeof(d.price), &bytesRead, NULL);
     ReadFile(hPipe, &d.Model, sizeof(d.Model), &bytesRead, NULL);
     ReadFile(hPipe, &d.quantity, sizeof(d.quantity), &bytesRead, NULL);
-
+*/
+    /*recv(sock,(char*)&d.id,sizeof(d.id),0);
+    recv(sock,(char*)&d.id,sizeof(d.Passenger),0);
+    recv(sock,(char*)&d.id,sizeof(d.Truck),0);
+    recv(sock,(char*)&d.id,sizeof(d.Bus),0);
+    recv(sock,(char*)&d.id,sizeof(d.Trailer),0);
+    recv(sock,(char*)&d.id,sizeof(d.volume),0);
+    recv(sock,(char*)&d.id,sizeof(d.Capacity),0);
+    recv(sock,(char*)&d.id,sizeof(d.price),0);
+    recv(sock,(char*)&d.id,sizeof(d.Model),0);
+    recv(sock,(char*)&d.quantity,sizeof(d.quantity),0);*/
+    recv(sock,(char*)&d,sizeof(d),0);
     carCopy = Cars::fromCarData(d);
     return carCopy;
 }
@@ -107,16 +103,13 @@ Cars CarDataBase::record_index(unsigned int index) {
 int CarDataBase::append(Cars& record)
 {
         req = APPEND_REQ;
-        if (!WriteFile(hPipe, (LPVOID)&req, sizeof(int), &bytesWritten, NULL)) {
-            qDebug() << "Error writing to channel: " << GetLastError();
-            CloseHandle(hPipe);
-            return -1;
-        }
+        send(sock,(char*)&req,sizeof(req),0);
 
-        Cars::CarData d = Cars::toCarData(record);
+
+        CarData d = Cars::toCarData(record);
 
         // Запись данных в канал
-        WriteFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
+  /*      WriteFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
         WriteFile(hPipe, (LPVOID)&d.Truck, sizeof(d.Truck), &bytesRead, NULL);
         WriteFile(hPipe, (LPVOID)&d.Bus, sizeof(d.Bus), &bytesRead, NULL);
         WriteFile(hPipe, (LPVOID)&d.Trailer, sizeof(d.Trailer), &bytesRead, NULL);
@@ -125,10 +118,23 @@ int CarDataBase::append(Cars& record)
         WriteFile(hPipe, (LPVOID)&d.price, sizeof(d.price), &bytesRead, NULL);
         WriteFile(hPipe, (LPVOID)&d.Model, sizeof(d.Model), &bytesRead, NULL);
         WriteFile(hPipe, (LPVOID)&d.quantity, sizeof(d.quantity), &bytesRead, NULL);
+*/
+        /*
+        send(sock,(char*)&d.Passenger,sizeof(d.Passenger),0);
+        send(sock,(char*)&d.Truck,sizeof(d.Truck),0);
+        send(sock,(char*)&d.Bus,sizeof(d.Bus),0);
+        send(sock,(char*)&d.Trailer,sizeof(d.Trailer),0);
+        send(sock,(char*)&d.volume,sizeof(d.volume),0);
+        send(sock,(char*)&d.Capacity,sizeof(d.Capacity),0);
+        send(sock,(char*)&d.price,sizeof(d.price),0);
+        send(sock,(char*)&d.Model,sizeof(d.Model),0);
+        send(sock,(char*)&d.quantity,sizeof(d.quantity),0);*/
+        send(sock,(char*)&d,sizeof(d),0);
 
         record = Cars::fromCarData(d);
 
-        ReadFile(hPipe,(LPVOID)&id, sizeof(id), &bytesRead, NULL);
+        //ReadFile(hPipe,(LPVOID)&id, sizeof(id), &bytesRead, NULL);
+        recv(sock,(char*)&d.id,sizeof(d.id),0);
         record.id = id;
         //ReadFile(hPipe, (void*)&pos, sizeof(pos), &bytesRead, NULL);
 
@@ -171,13 +177,11 @@ void CarDataBase::sl_addCar(Cars& tmp)
 void CarDataBase::remove(unsigned int id)
 {
     req = REMOVE_REQ;
-    if (!WriteFile(hPipe, (LPCVOID)&req, sizeof(int), &bytesWritten, NULL)) {
-        qDebug() << "Error writing to channel: " << GetLastError();
-        CloseHandle(hPipe);
-        return;
-    }
+    send(sock,(char*)&req,sizeof(req),0);
 
-    WriteFile(hPipe, (LPCVOID)&id, sizeof(int), &bytesWritten, NULL);
+
+    //WriteFile(hPipe, (LPCVOID)&id, sizeof(int), &bytesWritten, NULL);
+    send(sock,(char*)&id,sizeof(id),0);
 }
 void CarDataBase::sl_UploadFile()
 {
@@ -186,11 +190,7 @@ void CarDataBase::sl_UploadFile()
 void CarDataBase::sl_SaveDataBase()
 {
     req = SAVE_DB;
-       DWORD bytesWritten;
-       if (!WriteFile(hPipe, (LPCVOID)&req, sizeof(int), &bytesWritten, NULL)) {
-           qDebug() << "Error writing to channel: " << GetLastError();
-           CloseHandle(hPipe);
-       }
+    send(sock,(char*)&req,sizeof(req),0);
 
 }
 int CarDataBase::update(Cars& record)
@@ -199,19 +199,15 @@ int CarDataBase::update(Cars& record)
     Cars recordCopy = record;
 
     req = UPDATE_REQ;
-    DWORD bytesWritten;
-    if (!WriteFile(hPipe, (LPCVOID)&req, sizeof(int), &bytesWritten, NULL)) {
-        qDebug() << "Error writing to channel: " << GetLastError();
-        CloseHandle(hPipe);
-        return -1;
-    }
+    send(sock,(char*)&req,sizeof(req),0);
+    CarData d = Cars::toCarData(recordCopy);
+    //WriteFile(hPipe, (LPCVOID)&record.id, sizeof(int), &bytesWritten, NULL);
+    send(sock,(char*)&d,sizeof(d),0);
 
-    WriteFile(hPipe, (LPCVOID)&record.id, sizeof(int), &bytesWritten, NULL);
 
-    Cars::CarData d = Cars::toCarData(recordCopy);
 
     // Запись данных в канал
-    WriteFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesWritten, NULL);
+    /*WriteFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesWritten, NULL);
     WriteFile(hPipe, (LPVOID)&d.Truck, sizeof(d.Truck), &bytesWritten, NULL);
     WriteFile(hPipe, (LPVOID)&d.Bus, sizeof(d.Bus), &bytesWritten, NULL);
     WriteFile(hPipe, (LPVOID)&d.Trailer, sizeof(d.Trailer), &bytesWritten, NULL);
@@ -220,8 +216,17 @@ int CarDataBase::update(Cars& record)
     WriteFile(hPipe, (LPVOID)&d.price, sizeof(d.price), &bytesWritten, NULL);
     WriteFile(hPipe,(LPVOID) &d.Model, sizeof(d.Model), &bytesWritten, NULL);
     WriteFile(hPipe,(LPVOID) &d.quantity, sizeof(d.quantity), &bytesWritten, NULL);
-
-
+*/
+   /* send(sock,(char*)&d.Passenger,sizeof(d.Passenger),0);
+    send(sock,(char*)&d.Truck,sizeof(d.Truck),0);
+    send(sock,(char*)&d.Bus,sizeof(d.Bus),0);
+    send(sock,(char*)&d.Trailer,sizeof(d.Trailer),0);
+    send(sock,(char*)&d.volume,sizeof(d.volume),0);
+    send(sock,(char*)&d.Capacity,sizeof(d.Capacity),0);
+    send(sock,(char*)&d.price,sizeof(d.price),0);
+    send(sock,(char*)&d.Model,sizeof(d.Model),0);
+    send(sock,(char*)&d.quantity,sizeof(d.quantity),0);
+*/
     //ReadFile(hPipe, (void*)&pos, sizeof(pos), &bytesRead, NULL);
     return 1;
 }
@@ -231,16 +236,14 @@ Cars CarDataBase::record_id(unsigned int id) {
 
     // Устанавливаем код запроса на получение записи по идентификатору
     req = RECORD_ID_REQ;
-    DWORD bytesWritten;
-    if (!WriteFile(hPipe, (LPCVOID)&req, sizeof(int), &bytesWritten, NULL)) {
-        qDebug() << "Error writing to channel: " << GetLastError();
-        return carCopy; // Возвращаем пустую копию объекта, чтобы указать ошибку
-    }
+    send(sock,(char*)&req,sizeof(req),0);
+
 
     // Записываем идентификатор машины в канал
-    WriteFile(hPipe, (LPCVOID)&id, sizeof(int), &bytesWritten, NULL);
-    Cars::CarData d;
-    ReadFile(hPipe, (void*)&d.id, sizeof (d.id), &bytesRead,NULL);
+    //WriteFile(hPipe, (LPCVOID)&id, sizeof(int), &bytesWritten, NULL);
+    send(sock,(char*)&id,sizeof(id),0);
+    CarData d;
+   /* ReadFile(hPipe, (void*)&d.id, sizeof (d.id), &bytesRead,NULL);
     ReadFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
     ReadFile(hPipe, (LPVOID)&d.Truck, sizeof(d.Truck), &bytesRead, NULL);
     ReadFile(hPipe, (LPVOID)&d.Bus, sizeof(d.Bus), &bytesRead, NULL);
@@ -250,9 +253,18 @@ Cars CarDataBase::record_id(unsigned int id) {
     ReadFile(hPipe, (LPVOID)&d.price, sizeof(d.price), &bytesRead, NULL);
     ReadFile(hPipe, (LPVOID)&d.Model, sizeof(d.Model), &bytesRead, NULL);
     ReadFile(hPipe, (LPVOID)&d.quantity, sizeof(d.quantity), &bytesRead, NULL);
-    // Читаем информацию о машине из канала
+    */// Читаем информацию о машине из канала
     // Пример чтения из канала и формирования объекта Cars carCopy;
-
+    /*recv(sock,(char*)&d.Passenger,sizeof(d.Passenger),0);
+    recv(sock,(char*)&d.Truck,sizeof(d.Truck),0);
+    recv(sock,(char*)&d.Bus,sizeof(d.Bus),0);
+    recv(sock,(char*)&d.Trailer,sizeof(d.Trailer),0);
+    recv(sock,(char*)&d.volume,sizeof(d.volume),0);
+    recv(sock,(char*)&d.Capacity,sizeof(d.Capacity),0);
+    recv(sock,(char*)&d.price,sizeof(d.price),0);
+    recv(sock,(char*)&d.Model,sizeof(d.Model),0);
+    recv(sock,(char*)&d.quantity,sizeof(d.quantity),0);*/
+    recv(sock,(char*)&d,sizeof(d),0);
     carCopy = Cars::fromCarData(d);
     return carCopy;
 }
@@ -261,33 +273,29 @@ QVector<Cars> CarDataBase::Records()
 {
    QVector<Cars> res;
     req = RECORDS_REQ;
-    DWORD bytesWritten;
-    if (!WriteFile(hPipe, (LPCVOID)&req, sizeof(int), &bytesWritten, NULL)) {
-        qDebug() << "Error writing to channel: " << GetLastError();
-        CloseHandle(hPipe);
-        return res;
-    }
+    send(sock,(char*)&req,sizeof(req),0);
 
     // Read the count of records from the channel
     int count;
-    DWORD bytesRead;
-    ReadFile(hPipe, (LPVOID)&count, sizeof(int), &bytesRead, NULL);
+     CarData d;
+    //DWORD bytesRead;
+    //ReadFile(hPipe, (LPVOID)&count, sizeof(int), &bytesRead, NULL);
     qDebug() << "Read from the channel: " << count;
-
+    recv(sock,(char*)&count,sizeof(count),0);
     for(int i = 0; i < count; i++)
     {
-        Cars::CarData d;
+
         // Read the CarData from the channel
-        ReadFile(hPipe, (LPVOID)&d.id, sizeof(d.id), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.Passenger, sizeof(d.Passenger), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.Truck, sizeof(d.Truck), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.Bus, sizeof(d.Bus), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.Trailer, sizeof(d.Trailer), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.volume, sizeof(d.volume), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.Capacity, sizeof(d.Capacity), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.price, sizeof(d.price), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.Model, sizeof(d.Model), &bytesRead, NULL);
-        ReadFile(hPipe, (LPVOID)&d.quantity, sizeof(d.quantity), &bytesRead, NULL);
+        recv(sock,(char*)&d.id,sizeof(d.id),0);
+        recv(sock,(char*)&d.Passenger,sizeof(d.Passenger),0);
+        recv(sock,(char*)&d.Truck,sizeof(d.Truck),0);
+        recv(sock,(char*)&d.Bus,sizeof(d.Bus),0);
+        recv(sock,(char*)&d.Trailer,sizeof(d.Trailer),0);
+        recv(sock,(char*)&d.volume,sizeof(d.volume),0);
+        recv(sock,(char*)&d.Capacity,sizeof(d.Capacity),0);
+        recv(sock,(char*)&d.price,sizeof(d.price),0);
+        recv(sock,(char*)&d.Model,sizeof(d.Model),0);
+        recv(sock,(char*)&d.quantity,sizeof(d.quantity),0);
         // Convert the CarData to a Cars object and append it to the result vector
         res.append(Cars::fromCarData(d));
     }
@@ -312,7 +320,7 @@ bool CarDataBase::load(QString filename)
 }
 int CarDataBase::getNextId(){}
 int CarDataBase::GetNewNext(){}
-Cars::CarData toCarData(Cars car) {
+CarData toCarData(Cars car) {
    /* Cars::CarData rr;
 
     rr.id = car.id;
@@ -333,7 +341,7 @@ Cars::CarData toCarData(Cars car) {
     return rr;*/
 }
 
-Cars fromCarData(Cars::CarData &data){
+Cars fromCarData(CarData &data){
     /*Cars d;
 
     d.id = data.id;

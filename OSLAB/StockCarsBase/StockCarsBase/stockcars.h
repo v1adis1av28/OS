@@ -9,8 +9,6 @@
 #include <windows.h>
 #include <iostream>
 #include <winbase.h>
-#include <QTimer>
-
 QT_BEGIN_NAMESPACE
 namespace Ui { class StockCars; }
 QT_END_NAMESPACE
@@ -34,8 +32,6 @@ private:
     int recordType =0;
     void loadFile(const QString& file_path);
     void saveDataFile(const QString& file_path);
-    void updateFiles();
-    QTimer *timer;
 
 private slots:
     void sl_HideInfo();
